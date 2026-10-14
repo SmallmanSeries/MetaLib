@@ -14,6 +14,9 @@ import java.util.Enumeration;
  * <p>
  * This class provides operations such as getting the player's system username, system time, IP address, operating system name, etc.
  * All methods should be called on the client side to synchronize with the player's own information.
+ *
+ * @author KiTheAdventurer
+ * @since 1.0
  */
 public final class MetaInfo {
 
