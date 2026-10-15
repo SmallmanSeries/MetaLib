@@ -3,6 +3,7 @@ package com.smallmanseries.metalib.event;
 import com.smallmanseries.metalib.MetaLib;
 import com.smallmanseries.metalib.commands.MetaLibCommand;
 import com.smallmanseries.metalib.network.packet.MetaInfoPacket;
+import com.smallmanseries.metalib.network.packet.MetaPopupPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -24,6 +25,12 @@ public class EventHandlerCommon {
                 MetaInfoPacket.TYPE,
                 MetaInfoPacket.STREAM_CODEC,
                 MetaInfoPacket::handleClient
+        );
+
+        registrar.playToClient(
+                MetaPopupPacket.TYPE,
+                MetaPopupPacket.STREAM_CODEC,
+                MetaPopupPacket::handleClient
         );
     }
 }

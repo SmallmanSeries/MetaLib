@@ -11,6 +11,7 @@ import java.awt.*;
  * This class provides operations to show pop-ups on the player's computer.
  * All methods should be called on the client side.
  *
+ * @see com.smallmanseries.metalib.network.packet.MetaPopupPacket
  * @author KiTheAdventurer
  * @since 1.0
  */
