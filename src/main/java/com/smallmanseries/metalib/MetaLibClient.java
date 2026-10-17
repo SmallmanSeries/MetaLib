@@ -1,5 +1,7 @@
 package com.smallmanseries.metalib;
 
+import com.smallmanseries.metalib.client.fakecrash.FakeCrashReportBuilder;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -18,6 +20,6 @@ public class MetaLibClient {
 
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
-
+        Minecraft.getInstance().execute(FakeCrashReportBuilder::getRenderInfo);
     }
 }
