@@ -1,7 +1,10 @@
 package com.smallmanseries.metalib.network.handler;
 
+import com.smallmanseries.metalib.api.MetaCrash;
 import com.smallmanseries.metalib.api.MetaInfo;
 import com.smallmanseries.metalib.api.MetaPopup;
+import com.smallmanseries.metalib.network.packet.FakeCrashReportPacket;
+import com.smallmanseries.metalib.network.packet.ForceCrashOrQuitPacket;
 import com.smallmanseries.metalib.network.packet.MetaInfoPacket;
 import com.smallmanseries.metalib.network.packet.MetaPopupPacket;
 import net.minecraft.client.Minecraft;
@@ -34,5 +37,25 @@ public class ClientHandler {
                 MetaPopup.showPopup(packet.title(), packet.message(), packet.dialogType());
             }
         });
+    }
+
+    public static void handleFakeCrashReport(FakeCrashReportPacket packet) {
+        CompletableFuture.runAsync(() -> {
+            MetaCrash.showFakeCrashReport(packet.title(), packet.report(), null);
+        });
+    }
+
+//    public static void handleFakeCrashImage(FakeCrashImagePacket packet) {
+//        CompletableFuture.runAsync(() -> {
+//
+//        });
+//    }
+
+    public static void handleForceCrash(ForceCrashOrQuitPacket packet) {
+        if (packet.silent()) {
+            MetaCrash.silentQuitAfter(packet.delayTime());
+        } else {
+            MetaCrash.forceCrash(packet.description(), packet.report());
+        }
     }
 }
