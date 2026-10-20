@@ -12,7 +12,7 @@ import java.awt.*;
  * All methods should be called on the client side.
  *
  * @see com.smallmanseries.metalib.network.packet.MetaPopupPacket
- * @author KiTheAdventurer
+ * @author SmallmanSeries
  * @since 1.0
  */
 public class MetaPopup {
@@ -24,6 +24,7 @@ public class MetaPopup {
 
     /**
      * Show a {@link JOptionPane} pop-up window.
+     * <p>
      * Call this on the client side to ensure that the pop-up window appears on the player's computer.
      *
      * @param title   Pop-up title
@@ -31,6 +32,20 @@ public class MetaPopup {
      * @param type    Pop-up type ({@link Type})
      */
     public static void showPopup(String title, String message, Type type) {
+        showPopup(title, message, type, (Runnable) null);
+    }
+
+    /**
+     * Show a {@link JOptionPane} pop-up window with an action that will run after the player closes the pop-up window.
+     * <p>
+     * Call this on the client side to ensure that the pop-up window appears on the player's computer.
+     *
+     * @param title   Pop-up title
+     * @param message Pop-up content
+     * @param type    Pop-up type ({@link Type})
+     * @param after   an action that will run after the player closes the pop-up window
+     */
+    public static void showPopup(String title, String message, Type type, Runnable after) {
         HeadlessFix.ensureNonHeadless();
         SwingUtilities.invokeLater(() -> {
             int msgType = switch (type) {
@@ -41,11 +56,15 @@ public class MetaPopup {
                 case PLAIN -> JOptionPane.PLAIN_MESSAGE;
             };
             JOptionPane.showMessageDialog(null, message, title, msgType);
+            if (after != null) {
+                after.run();
+            }
         });
     }
 
     /**
      * Show a {@link JOptionPane} pop-up window with a fake stack trace, simulate an error pop-up.
+     * <p>
      * Call this on the client side to ensure that the pop-up window appears on the player's computer.
      *
      * @param title     Pop-up title
@@ -54,6 +73,21 @@ public class MetaPopup {
      * @param fakeStack Fake stack trace information (in fact, any text can be written here, such as what the meta character says)
      */
     public static void showPopup(String title, String message, Type type, String fakeStack) {
+        showPopup(title, message, type, fakeStack, null);
+    }
+
+    /**
+     * Show a {@link JOptionPane} pop-up window with a fake stack trace, simulate an error pop-up.
+     * <p>
+     * Call this on the client side to ensure that the pop-up window appears on the player's computer.
+     *
+     * @param title     Pop-up title
+     * @param message   Pop-up content
+     * @param type      Pop-up type ({@link Type})
+     * @param fakeStack Fake stack trace information (in fact, any text can be written here, such as what the meta character says)
+     * @param after     an action that will run after the player closes the pop-up window
+     */
+    public static void showPopup(String title, String message, Type type, String fakeStack, Runnable after) {
         HeadlessFix.ensureNonHeadless();
         SwingUtilities.invokeLater(() -> {
             JTextArea area = new JTextArea(fakeStack, 12, 60);
@@ -70,6 +104,9 @@ public class MetaPopup {
                 case PLAIN -> JOptionPane.PLAIN_MESSAGE;
             };
             JOptionPane.showMessageDialog(null, panel, title, msgType);
+            if (after != null) {
+                after.run();
+            }
         });
     }
 }
