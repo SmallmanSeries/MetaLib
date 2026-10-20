@@ -27,6 +27,7 @@ public class WindowAnimationBuilder {
     boolean loop = false;
     boolean cursor = false;
     Runnable onFinish;
+    Runnable onTick;
     String tag = "default";
 
     // ── Position ──────────────────────────────────
@@ -109,6 +110,11 @@ public class WindowAnimationBuilder {
 
     public WindowAnimationBuilder tag(String tag) {
         this.tag = tag;
+        return this;
+    }
+
+    public WindowAnimationBuilder onTick(Runnable r) {
+        this.onTick = r;
         return this;
     }
 

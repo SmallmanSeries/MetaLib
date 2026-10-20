@@ -56,6 +56,13 @@ public final class WindowAnimationEngine {
         List<AnimationSequence> snapshot = new ArrayList<>(sequences);
         for (AnimationSequence seq : snapshot) {
             seq.tick(handle);
+            if (seq.builder.onTick != null) {
+                try {
+                    seq.builder.onTick.run();
+                } catch (Throwable t) {
+                    MetaLib.LOGGER.error("onTick failed", t);
+                }
+            }
             if (seq.isFinished()) {
                 sequences.remove(seq);
                 if (seq.builder.onFinish != null) {
