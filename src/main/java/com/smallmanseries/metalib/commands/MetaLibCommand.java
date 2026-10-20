@@ -103,6 +103,8 @@ public class MetaLibCommand {
         return players.size();
     }
 
+    // Todo Command Callback System
+
     /* /metalib crash <targets> fake report <report> [<addinfo>] */
     /* /metalib crash <targets> fake image <path> */
     /* /metalib crash <targets> real <description> <report> */
@@ -384,4 +386,6 @@ public class MetaLibCommand {
         }
         return players.size();
     }
+
+    // Todo Animation Builder System
 }
