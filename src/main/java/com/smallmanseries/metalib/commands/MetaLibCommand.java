@@ -58,35 +58,49 @@ public class MetaLibCommand {
                         .then(Commands.argument("description", StringArgumentType.string())
                                 .then(Commands.argument("message", StringArgumentType.string())
                                         .then(Commands.argument("type", EnumArgument.enumArgument(MetaPopup.Type.class))
-                                                .executes(context -> {
-                                                    Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
-                                                    String title = StringArgumentType.getString(context, "description");
-                                                    String msg = StringArgumentType.getString(context, "message");
-                                                    MetaPopup.Type type = context.getArgument("type", MetaPopup.Type.class);
-                                                    for (ServerPlayer player : players) {
-                                                        PacketDistributor.sendToPlayer(player, new MetaPopupPacket(title, msg, type, false, ""));
-                                                    }
-                                                    context.getSource().sendSuccess(() -> Component.literal("Popup(s) have been shown to " + players.size() + " players"), true);
-                                                    return players.size();
-                                                })
-                                                .then(Commands.argument("stack", StringArgumentType.string())
-                                                        .executes(context -> {
-                                                            Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
-                                                            String title = StringArgumentType.getString(context, "description");
-                                                            String msg = StringArgumentType.getString(context, "message");
-                                                            MetaPopup.Type type = context.getArgument("type", MetaPopup.Type.class);
-                                                            String stack = StringArgumentType.getString(context, "stack");
-                                                            for (ServerPlayer player : players) {
-                                                                PacketDistributor.sendToPlayer(player, new MetaPopupPacket(title, msg, type, true, stack));
-                                                            }
-                                                            context.getSource().sendSuccess(() -> Component.literal("Popup(s) have been shown to " + players.size() + " players"), true);
-                                                            return players.size();
-                                                        })
+                                                .executes(context -> popupOperations(context,
+                                                        null,
+                                                        null
+                                                ))
+                                                .then(Commands.literal("run")
+                                                        .then(Commands.argument("command", StringArgumentType.string())
+                                                                .executes(context -> popupOperations(context,
+                                                                        null,
+                                                                        StringArgumentType.getString(context, "command")
+                                                                ))
+                                                        )
                                                 )
+                                                .then(Commands.argument("stack", StringArgumentType.string())
+                                                        .executes(context -> popupOperations(context,
+                                                                StringArgumentType.getString(context, "stack"),
+                                                                null
+                                                        ))
+                                                        .then(Commands.literal("run")
+                                                                .then(Commands.argument("command", StringArgumentType.string())
+                                                                        .executes(context -> popupOperations(context,
+                                                                                StringArgumentType.getString(context, "stack"),
+                                                                                StringArgumentType.getString(context, "command")
+                                                                        ))
+                                                                )
+                                                        )
+                                                )
+
                                         )
                                 )
                         )
                 );
+    }
+
+    private static int popupOperations(CommandContext<CommandSourceStack> context, String stack, String runAfter) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+        String title = StringArgumentType.getString(context, "description");
+        String msg = StringArgumentType.getString(context, "message");
+        MetaPopup.Type type = context.getArgument("type", MetaPopup.Type.class);
+        for (ServerPlayer player : players) {
+            PacketDistributor.sendToPlayer(player, new MetaPopupPacket(title, msg, type, stack != null, stack == null ? "" : stack));
+        }
+        context.getSource().sendSuccess(() -> Component.literal("Popup(s) have been shown to " + players.size() + " players"), true);
+        return players.size();
     }
 
     /* /metalib crash <targets> fake report <report> [<addinfo>] */
@@ -213,14 +227,14 @@ public class MetaLibCommand {
                                                                         IntegerArgumentType.getInteger(context, "y"),
                                                                         IntegerArgumentType.getInteger(context, "duration"),
                                                                         Easing.LINEAR))
-                                                        .then(Commands.argument("easing", EnumArgument.enumArgument(Easing.class))
-                                                                .executes(context -> windowOperations(context,
-                                                                        context.getArgument("operation", MetaWindowPacket.WindAnimOperation.class),
-                                                                        IntegerArgumentType.getInteger(context, "x"),
-                                                                        IntegerArgumentType.getInteger(context, "y"),
-                                                                        IntegerArgumentType.getInteger(context, "duration"),
-                                                                        context.getArgument("easing", Easing.class)))
-                                                        )
+                                                                .then(Commands.argument("easing", EnumArgument.enumArgument(Easing.class))
+                                                                        .executes(context -> windowOperations(context,
+                                                                                context.getArgument("operation", MetaWindowPacket.WindAnimOperation.class),
+                                                                                IntegerArgumentType.getInteger(context, "x"),
+                                                                                IntegerArgumentType.getInteger(context, "y"),
+                                                                                IntegerArgumentType.getInteger(context, "duration"),
+                                                                                context.getArgument("easing", Easing.class)))
+                                                                )
                                                         )
                                                 )
                                         )
@@ -246,27 +260,6 @@ public class MetaLibCommand {
                                                         IntegerArgumentType.getInteger(context, "duration"),
                                                         Easing.LINEAR))
                                         )
-                                )
-                                .then(Commands.literal("stop")
-                                        .executes(context -> {
-                                            int size = windowOperations(context, MetaWindowPacket.Operation.STOP, 0, 0, 1, Easing.LINEAR);
-                                            context.getSource().sendSuccess(() -> Component.literal("Stopped window animations for " + size + " players"), true);
-                                            return size;
-                                        })
-                                )
-                                .then(Commands.literal("pause")
-                                        .executes(context -> {
-                                            int size = windowOperations(context, MetaWindowPacket.Operation.PAUSE, 0, 0, 1, Easing.LINEAR);
-                                            context.getSource().sendSuccess(() -> Component.literal("Paused window animations for " + size + " players"), true);
-                                            return size;
-                                        })
-                                )
-                                .then(Commands.literal("resume")
-                                        .executes(context -> {
-                                            int size = windowOperations(context, MetaWindowPacket.Operation.RESUME, 0, 0, 1, Easing.LINEAR);
-                                            context.getSource().sendSuccess(() -> Component.literal("Resumed window animations for " + size + " players"), true);
-                                            return size;
-                                        })
                                 )
                         )
                         .then(Commands.literal("cursor")
@@ -321,27 +314,6 @@ public class MetaLibCommand {
                                                         Easing.LINEAR))
                                         )
                                 )
-                                .then(Commands.literal("stop")
-                                        .executes(context -> {
-                                            int size = windowOperations(context, MetaWindowPacket.Operation.STOP, 0, 0, 1, Easing.LINEAR);
-                                            context.getSource().sendSuccess(() -> Component.literal("Stopped window animations for " + size + " players"), true);
-                                            return size;
-                                        })
-                                )
-                                .then(Commands.literal("pause")
-                                        .executes(context -> {
-                                            int size = windowOperations(context, MetaWindowPacket.Operation.PAUSE, 0, 0, 1, Easing.LINEAR);
-                                            context.getSource().sendSuccess(() -> Component.literal("Paused window animations for " + size + " players"), true);
-                                            return size;
-                                        })
-                                )
-                                .then(Commands.literal("resume")
-                                        .executes(context -> {
-                                            int size = windowOperations(context, MetaWindowPacket.Operation.RESUME, 0, 0, 1, Easing.LINEAR);
-                                            context.getSource().sendSuccess(() -> Component.literal("Resumed window animations for " + size + " players"), true);
-                                            return size;
-                                        })
-                                )
                         )
                         .then(Commands.literal("settitle")
                                 .then(Commands.argument("title", StringArgumentType.string())
@@ -355,6 +327,27 @@ public class MetaLibCommand {
                                             return players.size();
                                         })
                                 )
+                        )
+                        .then(Commands.literal("stop")
+                                .executes(context -> {
+                                    int size = windowOperations(context, MetaWindowPacket.Operation.STOP, 0, 0, 1, Easing.LINEAR);
+                                    context.getSource().sendSuccess(() -> Component.literal("Stopped window animations for " + size + " players"), true);
+                                    return size;
+                                })
+                        )
+                        .then(Commands.literal("pause")
+                                .executes(context -> {
+                                    int size = windowOperations(context, MetaWindowPacket.Operation.PAUSE, 0, 0, 1, Easing.LINEAR);
+                                    context.getSource().sendSuccess(() -> Component.literal("Paused window animations for " + size + " players"), true);
+                                    return size;
+                                })
+                        )
+                        .then(Commands.literal("resume")
+                                .executes(context -> {
+                                    int size = windowOperations(context, MetaWindowPacket.Operation.RESUME, 0, 0, 1, Easing.LINEAR);
+                                    context.getSource().sendSuccess(() -> Component.literal("Resumed window animations for " + size + " players"), true);
+                                    return size;
+                                })
                         )
                 );
     }
@@ -371,7 +364,7 @@ public class MetaLibCommand {
     }
 
     private static int windowOperations(CommandContext<CommandSourceStack> context, MetaWindowPacket.WindAnimOperation op, int x, int y, int duration, Easing easing) throws CommandSyntaxException {
-        MetaWindowPacket.Operation operation = switch (op){
+        MetaWindowPacket.Operation operation = switch (op) {
             case scaleto -> MetaWindowPacket.Operation.SCALE_TO;
             case scaleby -> MetaWindowPacket.Operation.SCALE_BY;
             case scale -> MetaWindowPacket.Operation.SCALE;
