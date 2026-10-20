@@ -4,12 +4,12 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.smallmanseries.metalib.api.MetaPopup;
 import com.smallmanseries.metalib.client.fakecrash.FakeCrashReportBuilder;
-import com.smallmanseries.metalib.network.packet.FakeCrashReportPacket;
-import com.smallmanseries.metalib.network.packet.ForceCrashOrQuitPacket;
-import com.smallmanseries.metalib.network.packet.MetaInfoPacket;
-import com.smallmanseries.metalib.network.packet.MetaPopupPacket;
+import com.smallmanseries.metalib.client.window.Easing;
+import com.smallmanseries.metalib.network.packet.*;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -30,6 +30,7 @@ public class MetaLibCommand {
                         .then(info())
                         .then(popup())
                         .then(crash())
+                        .then(window())
         );
     }
 
@@ -162,5 +163,232 @@ public class MetaLibCommand {
                                 )
                         )
                 );
+    }
+
+    /* /metalib window <targets> fullscreen */
+    /* /metalib window <targets> windowed <width> <height> */
+    /* /metalib window <targets> animate <operation> <x> <y> [duration] [easing] */
+    /* /metalib window <targets> animate <stop|pause|resume> */
+    /* /metalib window <targets> cursor <move|setpos> <x> <y> */
+    private static LiteralArgumentBuilder<CommandSourceStack> window() {
+        return Commands.literal("window")
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .then(Commands.literal("fullscreen")
+                                .executes(context -> {
+                                    int size = windowOperations(context, MetaWindowPacket.Operation.FULLSCREEN, 0, 0, 0, Easing.LINEAR);
+                                    context.getSource().sendSuccess(() -> Component.literal("Forced fullscreen for " + size + " players"), true);
+                                    return size;
+                                })
+                        )
+                        .then(Commands.literal("windowed")
+                                .then(Commands.argument("width", IntegerArgumentType.integer(0))
+                                        .then(Commands.argument("height", IntegerArgumentType.integer(0))
+                                                .executes(context -> {
+                                                    int size = windowOperations(context,
+                                                            MetaWindowPacket.Operation.WINDOWED,
+                                                            IntegerArgumentType.getInteger(context, "width"),
+                                                            IntegerArgumentType.getInteger(context, "height"),
+                                                            0,
+                                                            Easing.LINEAR);
+                                                    context.getSource().sendSuccess(() -> Component.literal("Forced Windowed for " + size + " players"), true);
+                                                    return size;
+                                                })
+                                        )
+                                )
+                        )
+                        .then(Commands.literal("animate")
+                                .then(Commands.argument("operation", EnumArgument.enumArgument(MetaWindowPacket.WindAnimOperation.class))
+                                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                                                .then(Commands.argument("y", IntegerArgumentType.integer())
+                                                        .executes(context -> windowOperations(context,
+                                                                context.getArgument("operation", MetaWindowPacket.WindAnimOperation.class),
+                                                                IntegerArgumentType.getInteger(context, "x"),
+                                                                IntegerArgumentType.getInteger(context, "y"),
+                                                                0,
+                                                                Easing.LINEAR))
+                                                        .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                                                .executes(context -> windowOperations(context,
+                                                                        context.getArgument("operation", MetaWindowPacket.WindAnimOperation.class),
+                                                                        IntegerArgumentType.getInteger(context, "x"),
+                                                                        IntegerArgumentType.getInteger(context, "y"),
+                                                                        IntegerArgumentType.getInteger(context, "duration"),
+                                                                        Easing.LINEAR))
+                                                        .then(Commands.argument("easing", EnumArgument.enumArgument(Easing.class))
+                                                                .executes(context -> windowOperations(context,
+                                                                        context.getArgument("operation", MetaWindowPacket.WindAnimOperation.class),
+                                                                        IntegerArgumentType.getInteger(context, "x"),
+                                                                        IntegerArgumentType.getInteger(context, "y"),
+                                                                        IntegerArgumentType.getInteger(context, "duration"),
+                                                                        context.getArgument("easing", Easing.class)))
+                                                        )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("shake")
+                                        .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                                .then(Commands.argument("intensity", IntegerArgumentType.integer())
+                                                        .executes(context -> windowOperations(context,
+                                                                MetaWindowPacket.Operation.SHAKE,
+                                                                IntegerArgumentType.getInteger(context, "intensity"),
+                                                                0,
+                                                                IntegerArgumentType.getInteger(context, "duration"),
+                                                                Easing.LINEAR))
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("fix")
+                                        .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                                .executes(context -> windowOperations(context,
+                                                        MetaWindowPacket.Operation.FIX,
+                                                        0,
+                                                        0,
+                                                        IntegerArgumentType.getInteger(context, "duration"),
+                                                        Easing.LINEAR))
+                                        )
+                                )
+                                .then(Commands.literal("stop")
+                                        .executes(context -> {
+                                            int size = windowOperations(context, MetaWindowPacket.Operation.STOP, 0, 0, 1, Easing.LINEAR);
+                                            context.getSource().sendSuccess(() -> Component.literal("Stopped window animations for " + size + " players"), true);
+                                            return size;
+                                        })
+                                )
+                                .then(Commands.literal("pause")
+                                        .executes(context -> {
+                                            int size = windowOperations(context, MetaWindowPacket.Operation.PAUSE, 0, 0, 1, Easing.LINEAR);
+                                            context.getSource().sendSuccess(() -> Component.literal("Paused window animations for " + size + " players"), true);
+                                            return size;
+                                        })
+                                )
+                                .then(Commands.literal("resume")
+                                        .executes(context -> {
+                                            int size = windowOperations(context, MetaWindowPacket.Operation.RESUME, 0, 0, 1, Easing.LINEAR);
+                                            context.getSource().sendSuccess(() -> Component.literal("Resumed window animations for " + size + " players"), true);
+                                            return size;
+                                        })
+                                )
+                        )
+                        .then(Commands.literal("cursor")
+                                .then(Commands.argument("operation", EnumArgument.enumArgument(MetaWindowPacket.CursorOperation.class))
+                                        .then(Commands.argument("x", IntegerArgumentType.integer())
+                                                .then(Commands.argument("y", IntegerArgumentType.integer())
+                                                        .executes(context -> cursorOperations(context,
+                                                                context.getArgument("operation", MetaWindowPacket.CursorOperation.class),
+                                                                IntegerArgumentType.getInteger(context, "x"),
+                                                                IntegerArgumentType.getInteger(context, "y"),
+                                                                0,
+                                                                Easing.LINEAR))
+                                                        .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                                                .executes(context -> cursorOperations(context,
+                                                                        context.getArgument("operation", MetaWindowPacket.CursorOperation.class),
+                                                                        IntegerArgumentType.getInteger(context, "x"),
+                                                                        IntegerArgumentType.getInteger(context, "y"),
+                                                                        IntegerArgumentType.getInteger(context, "duration"),
+                                                                        Easing.LINEAR))
+                                                                .then(Commands.argument("easing", EnumArgument.enumArgument(Easing.class))
+                                                                        .executes(context -> cursorOperations(context,
+                                                                                context.getArgument("operation", MetaWindowPacket.CursorOperation.class),
+                                                                                IntegerArgumentType.getInteger(context, "x"),
+                                                                                IntegerArgumentType.getInteger(context, "y"),
+                                                                                0,
+                                                                                context.getArgument("easing", Easing.class))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("shake")
+                                        .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                                .then(Commands.argument("intensity", IntegerArgumentType.integer())
+                                                        .executes(context -> windowOperations(context,
+                                                                MetaWindowPacket.Operation.SHAKE_CURSOR,
+                                                                IntegerArgumentType.getInteger(context, "intensity"),
+                                                                0,
+                                                                IntegerArgumentType.getInteger(context, "duration"),
+                                                                Easing.LINEAR))
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("fix")
+                                        .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                                .executes(context -> windowOperations(context,
+                                                        MetaWindowPacket.Operation.CURSOR_FIX,
+                                                        0,
+                                                        0,
+                                                        IntegerArgumentType.getInteger(context, "duration"),
+                                                        Easing.LINEAR))
+                                        )
+                                )
+                                .then(Commands.literal("stop")
+                                        .executes(context -> {
+                                            int size = windowOperations(context, MetaWindowPacket.Operation.STOP, 0, 0, 1, Easing.LINEAR);
+                                            context.getSource().sendSuccess(() -> Component.literal("Stopped window animations for " + size + " players"), true);
+                                            return size;
+                                        })
+                                )
+                                .then(Commands.literal("pause")
+                                        .executes(context -> {
+                                            int size = windowOperations(context, MetaWindowPacket.Operation.PAUSE, 0, 0, 1, Easing.LINEAR);
+                                            context.getSource().sendSuccess(() -> Component.literal("Paused window animations for " + size + " players"), true);
+                                            return size;
+                                        })
+                                )
+                                .then(Commands.literal("resume")
+                                        .executes(context -> {
+                                            int size = windowOperations(context, MetaWindowPacket.Operation.RESUME, 0, 0, 1, Easing.LINEAR);
+                                            context.getSource().sendSuccess(() -> Component.literal("Resumed window animations for " + size + " players"), true);
+                                            return size;
+                                        })
+                                )
+                        )
+                        .then(Commands.literal("settitle")
+                                .then(Commands.argument("title", StringArgumentType.string())
+                                        .executes(context -> {
+                                            Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+                                            String title = StringArgumentType.getString(context, "title");
+                                            for (ServerPlayer player : players) {
+                                                PacketDistributor.sendToPlayer(player, new MetaWindowSetTitlePacket(title));
+                                            }
+                                            context.getSource().sendSuccess(() -> Component.literal("Set " + players.size() + " players' game window title to " + title), true);
+                                            return players.size();
+                                        })
+                                )
+                        )
+                );
+    }
+
+    private static int cursorOperations(CommandContext<CommandSourceStack> context, MetaWindowPacket.CursorOperation op, int x, int y, int duration, Easing easing) throws CommandSyntaxException {
+        MetaWindowPacket.Operation operation = switch (op) {
+            case moveby -> MetaWindowPacket.Operation.CURSOR_MOVE_BY;
+            case moveto -> MetaWindowPacket.Operation.CURSOR_MOVE_TO;
+            case move -> MetaWindowPacket.Operation.CURSOR_MOVE;
+        };
+        int size = windowOperations(context, operation, x, y, duration, easing);
+        context.getSource().sendSuccess(() -> Component.literal("Animated " + size + " players' cursor by operation " + operation), true);
+        return size;
+    }
+
+    private static int windowOperations(CommandContext<CommandSourceStack> context, MetaWindowPacket.WindAnimOperation op, int x, int y, int duration, Easing easing) throws CommandSyntaxException {
+        MetaWindowPacket.Operation operation = switch (op){
+            case scaleto -> MetaWindowPacket.Operation.SCALE_TO;
+            case scaleby -> MetaWindowPacket.Operation.SCALE_BY;
+            case scale -> MetaWindowPacket.Operation.SCALE;
+            case moveto -> MetaWindowPacket.Operation.MOVE_TO;
+            case moveby -> MetaWindowPacket.Operation.MOVE_BY;
+            case move -> MetaWindowPacket.Operation.MOVE;
+        };
+        int size = windowOperations(context, operation, x, y, duration, easing);
+        context.getSource().sendSuccess(() -> Component.literal("Animated " + size + " players' game window by operation " + operation), true);
+        return size;
+    }
+
+    private static int windowOperations(CommandContext<CommandSourceStack> context, MetaWindowPacket.Operation op, int x, int y, int duration, Easing easing) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+        for (ServerPlayer player : players) {
+            PacketDistributor.sendToPlayer(player, new MetaWindowPacket(op, x, y, duration, easing));
+        }
+        return players.size();
     }
 }
