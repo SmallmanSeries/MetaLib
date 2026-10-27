@@ -114,23 +114,6 @@ public final class WindowAnimationEngine {
         return sequences.stream().anyMatch(s -> tag.equals(s.builder.tag));
     }
 
-    // ── Daemon Thread ───────────────────────────────
-
-    public static void startFrameDriver() {
-        Thread t = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                Minecraft.getInstance().execute(INSTANCE::tick);
-                try {
-                    Thread.sleep(16);
-                } catch (InterruptedException e) {
-                    return;
-                }
-            }
-        }, "MetaLib-WindowAnim");
-        t.setDaemon(true);
-        t.start();
-    }
-
     // ── Handle ──────────────────────────────────
 
     public static final class AnimationHandle {
