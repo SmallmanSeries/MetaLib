@@ -31,6 +31,7 @@ public class MetaLibCommand {
                         .then(popup())
                         .then(crash())
                         .then(window())
+                        .then(freeze())
         );
     }
 
@@ -388,4 +389,42 @@ public class MetaLibCommand {
     }
 
     // Todo Animation Builder System
+
+    private static LiteralArgumentBuilder<CommandSourceStack> freeze() {
+        return Commands.literal("freeze")
+                .then(Commands.argument("targets", EntityArgument.players())
+                        .then(Commands.literal("freeze")
+                                .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                        .executes(context -> {
+                                            Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+                                            int duration = IntegerArgumentType.getInteger(context, "duration");
+                                            for (ServerPlayer player : players) {
+                                                PacketDistributor.sendToPlayer(player, new MetaFreezePacket(duration));
+                                            }
+                                            context.getSource().sendSuccess(() -> Component.literal("Freezed " + players.size() + " players' game for " + duration + " ms"), true);
+                                            return players.size();
+                                        })
+                                )
+                        )
+                        .then(Commands.literal("stutter")
+                                .then(Commands.argument("duration", IntegerArgumentType.integer())
+                                        .then(Commands.argument("interval", IntegerArgumentType.integer())
+                                                .then(Commands.argument("times", IntegerArgumentType.integer())
+                                                        .executes(context -> {
+                                                            Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+                                                            int duration = IntegerArgumentType.getInteger(context, "duration");
+                                                            int interval = IntegerArgumentType.getInteger(context, "interval");
+                                                            int times = IntegerArgumentType.getInteger(context, "times");
+                                                            for (ServerPlayer player : players) {
+                                                                PacketDistributor.sendToPlayer(player, new MetaStutterPacket(duration, interval, times));
+                                                            }
+                                                            context.getSource().sendSuccess(() -> Component.literal("Stuttered " + players.size() + " players' game"), true);
+                                                            return players.size();
+                                                        })
+                                                )
+                                        )
+                                )
+                        )
+                );
+    }
 }

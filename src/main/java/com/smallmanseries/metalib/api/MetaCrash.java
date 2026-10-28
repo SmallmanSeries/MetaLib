@@ -22,6 +22,8 @@ import java.awt.event.WindowEvent;
  * @since 1.0
  */
 public class MetaCrash {
+    private MetaCrash() {
+    }
 
     /**
      * Display a fake crash report panel to the player, which inspired by the crash panel from Minecraft 1.6.

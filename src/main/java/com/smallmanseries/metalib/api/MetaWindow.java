@@ -15,6 +15,8 @@ import org.lwjgl.glfw.GLFW;
  * @since 1.0
  */
 public class MetaWindow {
+    private MetaWindow() {
+    }
 
     private static long handle() {
         return Minecraft.getInstance().getWindow().handle();

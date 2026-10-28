@@ -15,6 +15,8 @@ import com.smallmanseries.metalib.client.window.WindowAnimationEngine;
  * @since 1.0
  */
 public class MetaWindowAnimate {
+    private MetaWindowAnimate() {
+    }
 
     /**
      * Returns Builder, chain-build the animation sequence.

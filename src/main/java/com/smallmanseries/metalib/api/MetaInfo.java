@@ -19,6 +19,8 @@ import java.util.Enumeration;
  * @since 1.0
  */
 public final class MetaInfo {
+    private MetaInfo() {
+    }
 
     /**
      * Get the username of the operating system currently running the game instance.

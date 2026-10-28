@@ -16,6 +16,8 @@ import java.awt.*;
  * @since 1.0
  */
 public class MetaPopup {
+    private MetaPopup() {
+    }
 
     /**
      * The type of pop-up window, which determines the icon on the left side of the window.
