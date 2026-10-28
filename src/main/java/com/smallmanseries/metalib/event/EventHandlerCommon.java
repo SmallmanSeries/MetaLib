@@ -61,5 +61,17 @@ public class EventHandlerCommon {
                 MetaWindowSetTitlePacket.STREAM_CODEC,
                 MetaWindowSetTitlePacket::handleClient
         );
+
+        registrar.playToClient(
+                MetaFreezePacket.TYPE,
+                MetaFreezePacket.STREAM_CODEC,
+                MetaFreezePacket::handleClient
+        );
+
+        registrar.playToClient(
+                MetaStutterPacket.TYPE,
+                MetaStutterPacket.STREAM_CODEC,
+                MetaStutterPacket::handleClient
+        );
     }
 }

@@ -77,9 +77,12 @@ public class ClientHandler {
             case SCALE -> MetaWindowAnimate.startScale(packet.x(), packet.y(), packet.duration(), packet.easing());
             case SHAKE -> MetaWindowAnimate.shakeWindow(packet.duration(), packet.x());
             case FIX -> MetaWindowAnimate.fix(packet.duration());
-            case CURSOR_MOVE_TO -> MetaWindowAnimate.moveCursorTo(packet.x(), packet.y(), packet.duration(), packet.easing());
-            case CURSOR_MOVE_BY -> MetaWindowAnimate.moveCursorBy(packet.x(), packet.y(), packet.duration(), packet.easing());
-            case CURSOR_MOVE -> MetaWindowAnimate.startCursorDrift(packet.x(), packet.y(), packet.duration(), packet.easing());
+            case CURSOR_MOVE_TO ->
+                    MetaWindowAnimate.moveCursorTo(packet.x(), packet.y(), packet.duration(), packet.easing());
+            case CURSOR_MOVE_BY ->
+                    MetaWindowAnimate.moveCursorBy(packet.x(), packet.y(), packet.duration(), packet.easing());
+            case CURSOR_MOVE ->
+                    MetaWindowAnimate.startCursorDrift(packet.x(), packet.y(), packet.duration(), packet.easing());
             case CURSOR_FIX -> MetaWindowAnimate.fixCursor(packet.duration());
             case SHAKE_CURSOR -> MetaWindowAnimate.shakeCursor(packet.duration(), packet.x());
             case STOP -> MetaWindowAnimate.stopAllAnimations();
@@ -90,5 +93,13 @@ public class ClientHandler {
 
     public static void handleWindowSetTitle(MetaWindowSetTitlePacket packet) {
         MetaWindow.setWindowTitle(packet.title());
+    }
+
+    public static void handleFreeze(MetaFreezePacket packet) {
+        MetaFreeze.freezeGame(packet.durationMs());
+    }
+
+    public static void handleStutter(MetaStutterPacket packet) {
+        MetaFreeze.stutterGame(packet.durationMs(), packet.intervalMs(), packet.times());
     }
 }
